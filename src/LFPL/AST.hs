@@ -6,6 +6,9 @@
 module LFPL.AST where
 
 import Data.Functor.Foldable.TH
+import Text.Megaparsec.Pos 
+
+type SourceRange = (SourcePos, SourcePos)
 
 data LFPLType = 
     LFPLBoolType
@@ -35,6 +38,8 @@ data LFPLTerm identType =
   | LFPLDiamondLiteral
   | LFPLIntArithOp LFPLIntArithOp (LFPLTerm identType) (LFPLTerm identType)
   | LFPLIntCmpOp LFPLIntCmpOp (LFPLTerm identType) (LFPLTerm identType)
+  -- | LFPLPosition startPos term endPos
+  | LFPLPositionTerm SourcePos (LFPLTerm identType) SourcePos 
 
 deriving instance Show identType => Show (LFPLTerm identType)
 
@@ -44,6 +49,7 @@ data LFPLIntCmpOp =
   | LessEq
   | GreaterThan
   | GreaterEq
-  | Equals deriving Show
+  | Equals
+  | NotEquals deriving Show
 
 makeBaseFunctor ''LFPLTerm

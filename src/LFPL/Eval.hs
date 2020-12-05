@@ -6,35 +6,7 @@ module LFPL.Eval where
 
 import LFPL.AST 
 
-import Data.Map (Map)
-import qualified Data.Map as Map
-
-import Data.Maybe
-
 import Data.Functor.Foldable
-
-import Control.Monad.Reader
-
--- data LFPLValue = 
---     LFPLBoolValue Bool
---   | LFPLIntValue Integer 
---   | LFPLUnitValue
---   | LFPLDiamondValue
---   | LFPLFunctionValue EvalContext String (LFPLTerm String)
---   | LFPLPairValue (LFPLValue, LFPLValue)
---   | LFPLListValue [LFPLValue]
-
--- type EvalContext = Map String LFPLValue
--- type Evaluator = Reader EvalContext
-
--- eval :: LFPLTerm String -> LFPLValue
--- eval = runEvaluator . cata go 
---   where go :: LFPLTermF String (Evaluator LFPLValue) -> Evaluator LFPLValue
---         go (LFPLIdentifierF v) = asks (fromJust . Map.lookup v)
---         go (LFPLLambdaF param _ body) = do
---           context <- ask
---           return $ LFPLFunctionValue context param body
---           -- return $ LFPLFunctionValue (\x -> local (Map.insert param x) body)
 
 
 eval :: LFPLTerm String -> LFPLTerm String 
@@ -87,7 +59,10 @@ eval (t @ (LFPLBoolLiteral {})) = t
 eval (t @ LFPLUnitLiteral) = t
 eval (t @ LFPLDiamondLiteral) = t
 
+eval (LFPLPositionTerm _ t _) = eval t 
+
 -- lfplIter :: a -> (LFPLTerm String -> a -> a) -> LFPLTerm String -> a
+lfplIter :: LFPLTerm String -> (LFPLTerm String -> LFPLTerm String -> LFPLTerm String -> LFPLTerm String) -> LFPLTerm String -> LFPLTerm String
 lfplIter nilCase consCase = eval . \case 
   LFPLListNil -> nilCase 
   LFPLListCons diamond listHead listTail -> 

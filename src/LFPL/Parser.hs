@@ -25,7 +25,7 @@ type Parser = Parsec Void String
 
 lfplTerm :: Parser (LFPLTerm String)
 -- lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "expression"
-lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
+lfplTerm = makeExprParser (term >>= postfix) operators <?> "expression"
   where lfplLambda = do 
           (name, t) <- reserved "fn" *> (nameAndType <|> parens nameAndType)
           e <- symbol "=>" *> lfplTerm
@@ -37,8 +37,6 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
                         <*> (reserved "then" *> lfplTerm) 
                         <*> (reserved "else" *> lfplTerm)
         lfplIntLiteral = LFPLIntLiteral <$> integer
-        -- lfplStringLiteral = LFPLStringLiteral <$> stringLiteral
-        -- lfplCharLiteral = F0Literal . F0CharLiteral <$> (char '#' *> charLiteral)
         lfplBoolLiteral = LFPLBoolLiteral <$> ((True <$ reserved "true") <|> (False <$ reserved "false")) 
         lfplUnitLiteral = LFPLUnitLiteral <$ symbol "()"
 
@@ -53,15 +51,6 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
           reserved "end"
 
           return $ LFPLApp (LFPLLambda name t e2) e1
-
-
-        -- f0Let = do 
-        --   reserved "let"
-        --   decls <- f0Decls 
-        --   reserved "in"
-        --   e <- f0Expression 
-        --   reserved "end"
-        --   return $ foldr F0Let e decls 
 
         lfplTuple = do 
           elems <- parens (sepBy1 lfplTerm (symbol ","))
@@ -112,15 +101,12 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
 
           return $ LFPLListIter e e0 x1 x2 y e1
 
-        term = --positioned $ 
+        term = positioned $ 
           choice [lfplLambda, lfplIf, lfplLet,
                   lfplNil, lfplCons, lfplIter, lfplDiamond,
                   lfplIdent, lfplTuple,
                   lfplUnitLiteral, lfplIntLiteral, lfplBoolLiteral]
-        postfix e = 
-              (functionApp e) <|> return e 
-              -- positioned (functionApp e) <|> return e 
-          -- <|> positioned (F0TypeAssertion e <$> (symbol ":" >> f0Type))
+        postfix e = positioned (functionApp e) <|> return e 
 
         functionApp e = foldl LFPLApp e <$> some term 
 
@@ -136,23 +122,18 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
                       cmpOp ">" GreaterThan,
                       cmpOp ">=" GreaterEq
                      ],
-                     [cmpOp "==" Equals],
-                      -- binOp NotEquals],
-                    --  [binOp And],
-                    --  [binOp Or],
+                     [cmpOp "==" Equals,
+                      cmpOp "!=" NotEquals],
                      [InfixR (LFPLApp <$ operator "$")]
                     --  [semicolon]
                      ]
-          where 
-                -- prefixOp opString opConstructor = 
-                --   Prefix (operator opString $> (\a -> F0OpExp opConstructor [a]))
-                arithOp str opConstructor = 
+          where arithOp str opConstructor = 
                   InfixL (operator str $> LFPLIntArithOp opConstructor) 
                 
                 cmpOp str opConstructor = 
                   InfixL (operator str $> LFPLIntCmpOp opConstructor)
 
-        -- positioned p = F0ExpPos <$> getSourcePos <*> p <*> getSourcePos
+        positioned p = LFPLPositionTerm <$> getSourcePos <*> p <*> getSourcePos
 
 -- Really only used when parsing data types
 lfplType :: Parser LFPLType
