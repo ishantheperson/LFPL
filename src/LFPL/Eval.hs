@@ -35,6 +35,7 @@ eval (LFPLIntCmpOp op e1 e2) =
                GreaterThan -> (>)
                GreaterEq -> (>=)
                Equals -> (==)
+               NotEquals -> (/=)
   in LFPLBoolLiteral (func (evalInt e1) (evalInt e2))
 
 eval (LFPLIntArithOp op e1 e2) = 
@@ -52,7 +53,7 @@ eval (LFPLListCons diamond listHead listTail) =
   LFPLListCons (eval diamond) (eval listHead) (eval listTail)
 
 -- Definitely values
-eval (t @ LFPLListNil) = t
+eval (t @ LFPLListNil {}) = t
 eval (t @ (LFPLLambda {})) = t
 eval (t @ (LFPLIntLiteral {})) = t
 eval (t @ (LFPLBoolLiteral {})) = t
@@ -61,10 +62,14 @@ eval (t @ LFPLDiamondLiteral) = t
 
 eval (LFPLPositionTerm _ t _) = eval t 
 
--- lfplIter :: a -> (LFPLTerm String -> a -> a) -> LFPLTerm String -> a
+-- | lfplIter nilCase consCase L = Runs the iterator on the given list.
+-- The 'nilCase' term will be evaluated when L is nil.
+-- For the cons case, the function 'consCase' should take in 3 arguments
+-- (the diamond, head, and recursive result) and should produce a term
+-- with those values substituted in
 lfplIter :: LFPLTerm String -> (LFPLTerm String -> LFPLTerm String -> LFPLTerm String -> LFPLTerm String) -> LFPLTerm String -> LFPLTerm String
 lfplIter nilCase consCase = eval . \case 
-  LFPLListNil -> nilCase 
+  LFPLListNil {} -> nilCase 
   LFPLListCons diamond listHead listTail -> 
     consCase diamond listHead (lfplIter nilCase consCase listTail)
 

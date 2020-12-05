@@ -1,6 +1,5 @@
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE TemplateHaskell #-} 
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveTraversable #-}
 module LFPL.AST where
@@ -18,6 +17,9 @@ data LFPLType =
   | LFPLFunctionType LFPLType LFPLType 
   | LFPLPairType LFPLType LFPLType 
   | LFPLListType LFPLType
+  -- | Not a 'real LFPL type', but used when
+  -- a typing error occurs
+  | LFPLAnyType
   deriving (Show)
 
 data LFPLTerm identType = 
@@ -28,7 +30,10 @@ data LFPLTerm identType =
   | LFPLPair (LFPLTerm identType) (LFPLTerm identType)
   -- letp (a, b) = e1 in e2
   | LFPLBindPair identType identType (LFPLTerm identType) (LFPLTerm identType)
-  | LFPLListNil
+  -- | For simplicity and to avoid problems with programs like
+  -- fn (x: int) => [], we require the empty list to be annotated
+  -- with its type
+  | LFPLListNil LFPLType
   | LFPLListCons (LFPLTerm identType) (LFPLTerm identType) (LFPLTerm identType) 
   -- | This is iter e { nil -> e0, cons(x1, x2, _) with y -> e1 }
   | LFPLListIter (LFPLTerm identType) (LFPLTerm identType) identType identType identType (LFPLTerm identType)

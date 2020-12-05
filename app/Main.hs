@@ -2,6 +2,7 @@ module Main where
 
 import LFPL.Parser
 import LFPL.Rename
+import LFPL.Typecheck
 import LFPL.Eval
 
 import Text.Show.Pretty 
@@ -14,7 +15,13 @@ colorPrint = putStrLn . hscolour TTY defaultColourPrefs False False "" False . p
 runStr s = do 
   let parsed = run s 
       Right renamed = rename parsed 
-      result = eval renamed 
+  
+  t <- case typecheck renamed of
+            Left errs -> do { print errs; error "done" }
+            Right t -> return t 
+
+  colorPrint t
+  let result = eval renamed 
   
   colorPrint result
 

@@ -24,8 +24,7 @@ type Parser = Parsec Void String
 --   errorMsg = errorBundlePretty
 
 lfplTerm :: Parser (LFPLTerm String)
--- lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "expression"
-lfplTerm = makeExprParser (term >>= postfix) operators <?> "expression"
+lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "expression"
   where lfplLambda = do 
           (name, t) <- reserved "fn" *> (nameAndType <|> parens nameAndType)
           e <- symbol "=>" *> lfplTerm
@@ -59,7 +58,8 @@ lfplTerm = makeExprParser (term >>= postfix) operators <?> "expression"
             [x, y] -> return $ LFPLPair x y 
             _ -> fail "tuples must have exactly two elements"
 
-        lfplNil = LFPLListNil <$ (reserved "nil" <|> void (symbol "[]"))
+        lfplNilSymbol = reserved "nil" <|> void (symbol "[]")
+        lfplNil = LFPLListNil <$ lfplNilSymbol <*> (symbol ":" *> lfplType)
         lfplCons = do 
           reserved "cons"
           symbol "("
@@ -79,7 +79,7 @@ lfplTerm = makeExprParser (term >>= postfix) operators <?> "expression"
           e <- lfplTerm 
           symbol "{"
           
-          void lfplNil
+          lfplNilSymbol
           symbol "=>"
           e0 <- lfplTerm 
 
@@ -104,8 +104,9 @@ lfplTerm = makeExprParser (term >>= postfix) operators <?> "expression"
         term = positioned $ 
           choice [lfplLambda, lfplIf, lfplLet,
                   lfplNil, lfplCons, lfplIter, lfplDiamond,
-                  lfplIdent, lfplTuple,
-                  lfplUnitLiteral, lfplIntLiteral, lfplBoolLiteral]
+                  lfplTuple,
+                  lfplUnitLiteral, lfplIntLiteral, lfplBoolLiteral,
+                  lfplIdent]
         postfix e = positioned (functionApp e) <|> return e 
 
         functionApp e = foldl LFPLApp e <$> some term 
@@ -125,7 +126,6 @@ lfplTerm = makeExprParser (term >>= postfix) operators <?> "expression"
                      [cmpOp "==" Equals,
                       cmpOp "!=" NotEquals],
                      [InfixR (LFPLApp <$ operator "$")]
-                    --  [semicolon]
                      ]
           where arithOp str opConstructor = 
                   InfixL (operator str $> LFPLIntArithOp opConstructor) 
@@ -209,6 +209,8 @@ reservedWords = ["val",
                  "in",
                  "end",
                  "with",
+                 "true",
+                 "false",
                 --  "case",
                 --  "of",
                 --  "datatype",
