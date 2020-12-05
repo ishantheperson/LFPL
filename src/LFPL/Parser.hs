@@ -30,7 +30,8 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
           (name, t) <- reserved "fn" *> (nameAndType <|> parens nameAndType)
           e <- symbol "=>" *> lfplTerm
           return $ LFPLLambda name t e
-          where nameAndType = (,) <$> identifier <*> (symbol ":" *> lfplType)
+        
+        nameAndType = (,) <$> identifier <*> (symbol ":" *> lfplType)
 
         lfplIf = LFPLIf <$> (reserved "if" *> lfplTerm) 
                         <*> (reserved "then" *> lfplTerm) 
@@ -42,6 +43,18 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
         lfplUnitLiteral = LFPLUnitLiteral <$ symbol "()"
 
         lfplIdent = LFPLIdentifier <$> identifier
+        lfplLet = do 
+          reserved "let"
+          (name, t) <- nameAndType <|> parens nameAndType
+          symbol "="
+          e1 <- lfplTerm 
+          reserved "in"
+          e2 <- lfplTerm 
+          reserved "end"
+
+          return $ LFPLApp (LFPLLambda name t e2) e1
+
+
         -- f0Let = do 
         --   reserved "let"
         --   decls <- f0Decls 
@@ -70,7 +83,7 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
 
           return $ LFPLListCons e1 e2 e3
 
-        lfplDiamond = LFPLDiamondLiteral <$ (diamond) 
+        lfplDiamond = LFPLDiamondLiteral <$ diamond
 
         lfplIter = do 
           reserved "iter"
@@ -100,7 +113,7 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
           return $ LFPLListIter e e0 x1 x2 y e1
 
         term = --positioned $ 
-          choice [lfplLambda, lfplIf, 
+          choice [lfplLambda, lfplIf, lfplLet,
                   lfplNil, lfplCons, lfplIter, lfplDiamond,
                   lfplIdent, lfplTuple,
                   lfplUnitLiteral, lfplIntLiteral, lfplBoolLiteral]
@@ -235,8 +248,8 @@ blockComment = do
   void $ string "(*"
   void $ manyTill anySingle (string "*)")
 
-run :: String -> IO (LFPLTerm String)
+run :: String -> LFPLTerm String
 run str = 
   case runParser (sc *> lfplTerm <* eof) "<testing>" str of 
-    Left err -> putStrLn (errorBundlePretty err) >> undefined 
-    Right r -> return r
+    Left err -> error (errorBundlePretty err) 
+    Right r -> r
