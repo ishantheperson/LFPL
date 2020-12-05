@@ -1,5 +1,11 @@
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveTraversable #-}
 module LFPL.AST where
+
+import Data.Functor.Foldable.TH
 
 data LFPLType = 
     LFPLBoolType
@@ -17,6 +23,7 @@ data LFPLTerm identType =
   | LFPLApp (LFPLTerm identType) (LFPLTerm identType)
   | LFPLIf (LFPLTerm identType) (LFPLTerm identType) (LFPLTerm identType)
   | LFPLPair (LFPLTerm identType) (LFPLTerm identType)
+  -- letp (a, b) = e1 in e2
   | LFPLBindPair identType identType (LFPLTerm identType) (LFPLTerm identType)
   | LFPLListNil
   | LFPLListCons (LFPLTerm identType) (LFPLTerm identType) (LFPLTerm identType) 
@@ -32,4 +39,11 @@ data LFPLTerm identType =
 deriving instance Show identType => Show (LFPLTerm identType)
 
 data LFPLIntArithOp = Plus | Minus | Times | Divide | Mod deriving Show 
-data LFPLIntCmpOp = LessThan | Equals deriving Show
+data LFPLIntCmpOp = 
+    LessThan 
+  | LessEq
+  | GreaterThan
+  | GreaterEq
+  | Equals deriving Show
+
+makeBaseFunctor ''LFPLTerm

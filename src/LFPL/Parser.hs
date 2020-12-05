@@ -66,7 +66,7 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
           e2 <- lfplTerm 
           symbol ","
           e3 <- lfplTerm 
-          symbol ","
+          symbol ")"
 
           return $ LFPLListCons e1 e2 e3
 
@@ -118,10 +118,10 @@ lfplTerm = (makeExprParser (term >>= postfix) operators) <?> "expression"
                       arithOp "%" Mod],
                      [arithOp "+" Plus,
                       arithOp "-" Minus],
-                     [cmpOp "<" LessThan
-                      -- binOp LessEq,
-                      -- binOp GreaterThan,
-                      -- binOp GreaterEq]
+                     [cmpOp "<" LessThan,
+                      cmpOp "<=" LessEq,
+                      cmpOp ">" GreaterThan,
+                      cmpOp ">=" GreaterEq
                      ],
                      [cmpOp "==" Equals],
                       -- binOp NotEquals],
