@@ -1,0 +1,340 @@
+% !TEX program = xelatex 
+\documentclass[12pt]{article}
+
+\usepackage{amsmath} 
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{fancyhdr}
+\usepackage{enumerate}
+\usepackage{multicol} 
+\usepackage{bm}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{mathtools}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{cancel}
+\usepackage{comment}
+\usepackage{stmaryrd}
+\usepackage{ulem} 
+\usepackage{alltt}
+\usepackage[T1]{fontenc}
+\usepackage{rotating}
+\usepackage{fancyvrb}
+\usepackage{hyperref}
+\usepackage{pdfpages}
+
+\usepackage{tikzducks}
+\usepackage[document]{ragged2e}
+\usepackage{fontspec}
+\usepackage{listings}
+
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\K}{\mathbb{K}}
+\newcommand{\F}{\mathbb{F}}
+\renewcommand{\O}{\mathcal{O}}
+\renewcommand{\P}{\mathcal{P}}
+\renewcommand{\U}{\mathcal{U}}
+\newcommand{\V}{\mathcal{V}}
+\newcommand{\W}{\mathcal{W}}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\L}{\mathcal{L}}
+
+\newcommand{\where}{\text{ where }}
+\newcommand{\via}{\text{ via }}
+\newcommand{\of}{\circ}
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\union}{\cup}
+\newcommand{\intersect}{\cap}
+\newcommand{\inv}{^{-1}}
+\newcommand{\lang}{\Sigma^*}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+
+\newcommand{\Int}{\displaystyle\int}
+\newcommand{\Lim}{\displaystyle\lim}
+\newcommand{\Union}{\displaystyle\bigcup}
+\newcommand{\Intersect}{\displaystyle\bigcap}
+\newcommand{\Sum}{\displaystyle\sum}
+\newcommand{\Prod}{\displaystyle\prod}
+\newcommand{\Binom}{\displaystyle\binom}
+
+\newcommand{\proj}{\mathrm{proj}}
+\newcommand{\Span}{\mathrm{Span}}
+\newcommand{\Null}{\mathrm{Null}}
+\newcommand{\rank}{\mathrm{rank}}
+\newcommand{\chr}{\mathsf{char}}
+\newcommand{\Prec}{\mathsf{Prec}}
+\newcommand{\dec}{\mathsf{dec}}
+\newcommand{\len}{\mathsf{len}}
+\newcommand{\nullity}{\mathrm{nullity}}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\otherwise}{\text{otherwise}}
+
+\newcommand{\Var}{\mathsf{Var}}
+\newcommand{\Skew}{\mathsf{Skew}}
+\newcommand{\Binomial}{\mathsf{Binomial}}
+\newcommand{\Poisson}{\mathsf{Poisson}}
+\newcommand{\Geometric}{\mathsf{Geometric}}
+\newcommand{\Bernoulli}{\mathsf{Bernoulli}}
+\newcommand{\Exponential}{\mathsf{Exponential}}
+\newcommand{\Uniform}{\mathsf{Uniform}}
+\newcommand{\Normal}{\mathsf{Normal}}
+
+\newcommand{\WP}{\text{w.p. }}
+
+\newcommand{\dx}{\, dx}
+\newcommand{\dy}{\, dy}
+\newcommand{\du}{\, du}
+%\newcommand{\dp}{\, dp}
+\newcommand{\ddx}{\frac{d}{dx}}
+
+\newcommand{\highlight}[1]{%
+  \colorbox{yellow!30}{$\displaystyle#1$}}
+\newenvironment{amatrix}[1]{%
+  \left[\begin{array}{@{}*{#1}{c}|c@{}}
+}{%
+  \end{array}\right]
+}
+\renewcommand{\arraystretch}{1.3}
+
+\oddsidemargin0cm
+\topmargin=-1cm    
+\textwidth16.5cm   
+\textheight22.5cm  
+
+\setmonofont[
+  Contextuals={Alternate}
+]{Fira Code}
+
+\makeatletter
+\def\verbatim@nolig@list{}
+\makeatother
+
+\lstset{
+  basicstyle={\small\ttfamily},
+  columns=fullflexible,
+  keepspaces=true,
+  mathescape,
+  numbers=left,
+  stringstyle=\color[HTML]{a31515},
+  commentstyle=\color[rgb]{0,0.5,0},
+  keywordstyle=\color[HTML]{AF00DB},
+  keywordstyle=[2]\color[rgb]{0,0,0.7},
+  keywordstyle=[3]\color[HTML]{267F99},
+  morecomment=[s]{(*}{*)},
+  morecomment=[l]{--},
+  keywords={let,letp,in,end,if,then,else,iter,with,fn},
+  keywords=[2]{true,false,nil,cons},
+  keywords=[3]{int,unit,list,<>, bool}
+}
+
+\newcommand{\code}{\lstinline}
+
+\newcounter{questioncounter}
+\newcommand{\question}[1]{
+\stepcounter{questioncounter}
+\subsection*{Question #1}
+}
+
+\newcounter{taskcounter}[questioncounter]
+\newcommand{\task}[1]{
+\stepcounter{taskcounter}
+\subsubsection*{(\arabic{questioncounter}.\arabic{taskcounter}) #1 }
+}
+
+\fancyhf{} % sets both header and footer to nothing
+\renewcommand{\headrulewidth}{0pt}
+
+\pagestyle{fancyplain}
+\lhead{\fancyplain{}{{\myhwname} --- \mycourse}}
+\rhead{\fancyplain{}{{\myname}}}
+\cfoot{\thepage}
+
+\newcommand{\myname}{Ishan Bhargava}
+
+\newcommand{\myhwname}{Homework 14} % confirm
+\newcommand{\mycourse}{15-819}  % confirm
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\headheight}{15pt}
+
+% \pagecolor{black}
+% \color{white}
+
+\title{LFPL Typechecker and Interpreter}
+\author{Ishan Bhargava}
+\date{15-819 Resource Aware Programming Languages}
+
+\begin{document}
+
+\maketitle 
+
+\section{Introduction}
+
+
+Although computers these days seem to have more memory than we know what to do with, there are still many areas of computing which require precise control over resource usage. For example, phones contain tiny SoCs which are dedicated to tasks such as processing Bluetooth radio events. These chips have small amounts of memory, but still need to fulfill difficult tasks in real time, such as decoding a high quality audio stream. Other classical examples include Blockchain-based applications, as space is also expensive in that domain. 
+
+\subsection{LFPL Background}
+
+The LFPL programming language was designed to represent `non-size-increasing programs'. LFPL programs produce a result whose size can never exceed the input size. This is achieved by using `diamonds' to represent an `allocation' for a node of a recursive type. For example, linked list nodes each require one diamond. This means that if you start your program with 5 diamonds, you cannot create more than 5 list nodes. Although our implementation of LFPL only includes linked lists, there's no reason this could not be generalized to other structures such as binary trees, where each node would require a diamond, or arrays, where $n$ diamonds would be required to allocate an array of length $n$.
+
+This has the consequence that non-constant-space data structures such as lists cannot be copied, since copying diamonds is illegal. Therefore, LFPL uses an affine type system for diamonds and lists. However, integers, booleans, and other constant-space types can be copied without any problem. This is because these so-called `heap-free' types cannot end up taking more than a constant amount of space, which can be found statically. 
+
+\section{Design and Syntax}
+
+The LFPL interpreter implements all features of LFPL as described in the lecture notes. In addition, integers have also been added as a heap-free type. Note for some syntactic forms, there is a Unicode alternative. LFPL programs are all one expression. 
+\begin{center}
+  \begin{tabular}{rl}
+    Comments 
+      & \code|-- Line comment| \\
+      & \code|(* Block comment *)| \\
+    Types
+      & \code|unit|, \code|int|, \code|bool| \\
+      & \code|<>|, $\diamondsuit$ \\
+      & \code|t1 * t2| \\
+      & \code|t1 -> t2|, \code|t1 -o t2| \\
+      & \code|t list| \\
+    Variables 
+      & \code|ident| \\
+    Lambda/anonymous function 
+      & \code|fn (x : t) => e| \\
+      & \code|$\lambda$ (x : t) => e| \\
+    Let binding
+      & \code|let x : t = e1 in e2 end| \\
+    Function application 
+      & \code|e1 e2| \\
+    Boolean literals 
+      & \code|true|, \code|false| \\
+    Integer literals 
+      & \code|..., -2, -1, 0, 1, 2, 3, ...| \\
+    Unit literal 
+      & \code|()| \\
+    Diamond literal (*)
+      & \code|<>|, $\diamondsuit$ \\
+    If expression 
+      & \code|if e1 then e2 else e3| \\
+    Pair creation
+      & \code|(e1, e2)| \\
+    Pair destructuring
+      & \code|letp (x, y) = e1 in e2 end| \\
+    Empty list 
+      & \code|nil: t|, \code|[]: t| \\
+    List construction 
+      & \code|cons(diamond, head, tail)| \\
+    List literal (*)
+      & \code|[e1, e2, e3, ...]: t| \\
+    List iteration 
+      & \code@iter e1 { nil => e2 | cons(x, y, _) with z => e2 }@
+  \end{tabular}
+\end{center}
+
+Forms marked with (*) `create' diamonds and therefore cannot appear in a regular LFPL program. They can only be used to specify input to an LFPL program. 
+
+Note that the empty list must be annotated with the type of its elements. This avoids ambiguity for programs like \code|fn x : unit => []| which otherwise cannot be assigned a type. The same applies for list literals. For example, \code|[1, 2, 3]: int| is a list of ints. 
+
+\subsection{Enforcing linearity}
+
+It is clear that lists are not copyable and therefore not heap-free. However, it is less clear whether we should consider functions to be heap-free or not. On one hand, functions can `capture' arbitrary values, some of which may be non-heap-free such as lists or other functions. But many functions don't do this, and could be considered heap-free. In order to avoid having to classify some functions as `heap-free' and others as not, we choose the more restrictive path and enforce linearity for all functions. These programs can be made to typecheck by inlining the function in question
+
+Similarly, inside of the \code|cons| case for the list iterator, the program cannot access any variables other than those bound by the iterator. This means that the following program does not typecheck:
+\begin{lstlisting}
+let 
+  insert : <> -> int -> int list -> int list =
+    fn d: <> => fn v: int => fn L: int list => (
+      iter L { 
+        [] => (fn d2: <> => fn x: int => cons(d2, x, []: int))
+      | cons(d1, x1, _) with f => (
+          fn d2: <> => fn x: int => 
+              if x >= x1 
+                then cons(d1, x1, f d2 x)
+                else cons(d1, x, f d2 x1)
+        )
+      }
+    ) d v 
+in
+let isort : int list -> int list = 
+  fn L : int list => 
+      iter L {
+          [] => []: int
+        | cons(d, x, _) with sortedTail => 
+            insert d x sortedTail 
+      }
+in 
+  isort 
+end
+end
+\end{lstlisting}
+Compiling this program fails:
+\begin{lstlisting}[numbers=none]
+bad_isort.lfpl: 20:13 - 20:20: Variable 'insert' not declared or out of scope
+\end{lstlisting}
+Instead, the programmer must inline the \code|insert| function manually
+
+\section{LFPL Interpreter}
+
+The LFPL interpreter is appropriately named `\verb|lfpl|'. We will illustrate the usage of the LFPL interpreter on a program which concatenates its input. 
+
+Suppose the following code is in a file called \verb|concat.lfpl|.
+\begin{lstlisting}
+let
+  concat: int list list -> int list =
+    fn xss: int list list =>
+      iter xss {
+          [] => []: int
+        | cons(d, xs, _) with y =>
+            iter xs {
+                [] => y
+              | cons(d', x, _) with y' => cons(d', x, y')
+            }
+
+            -- Note 'd' is lost here. We don't need it
+      }
+in
+  concat
+end 
+\end{lstlisting}
+
+We can typecheck this program by running \verb|lfpl concat.lfpl|:
+\begin{lstlisting}[numbers=none]
+% lfpl concat.lfpl
+<lambda>: (((int) list) list) -> ((int) list)
+\end{lstlisting}
+Since the program right now just returns a function, the interpreter stops and reports its type. We can provide input to the function as another argument on the command line
+\begin{lstlisting}[numbers=none]
+% lfpl concat.lfpl "([[1,2,3]: int, [4,5,6]: int, [7,8,9]: int]: int list)"
+[1, 2, 3, 4, 5, 6, 7, 8, 9]: (int) list
+\end{lstlisting}
+Now that there is some input for the function, the interpreter performs the function application, reduces it to a value, and displays it. 
+
+The interpreter also will display all parsing/typechecking problems. Consider the following program which attempts to use a diamond multiple times:
+\begin{lstlisting}
+let
+  append: int list -> int list -> int list =
+      fn xs: int list => fn ys: int list =>
+        iter xs {
+            [] => ys
+          | cons(d, x, _) with y => cons(d, x, cons(d, x, y))
+        }
+in
+  append
+end  
+\end{lstlisting}
+This results in an error:
+\begin{lstlisting}[numbers=none]
+badappend.lfpl: 6:57 - 6:58: Variable 'd' of type '<>' is not heap-free 
+                             and cannot be used multiple times
+Last usage: badappend.lfpl: 6:46 - 6:47
+Declared at: badappend.lfpl: 4:13 - 8:1  
+\end{lstlisting}
+
+\section{Further work}
+Currently, the interpreter uses a simple substitution-based approach when evaluating expressions. However, we could also compile LFPL to C without having to dynamically allocate more memory than is available in the input. In addition, we could relax some of the rules on linearity involving function types, by checking if a lambda contains free variables or if those free variables are all heap-free. We could also offer a new kind of definition \code|x := e| which would physically substitute \code|e| wherever \code|x| appears. This could make programming in LFPL easier. 
+
+\end{document}
