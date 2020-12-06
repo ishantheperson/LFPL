@@ -9,7 +9,7 @@ import LFPL.AST
 import Data.Functor.Foldable
 
 
-eval :: LFPLTerm String -> LFPLTerm String 
+eval :: LFPLTerm -> LFPLTerm 
 eval (LFPLIdentifier _) = error "eval: Term should not contain free variables"
 eval (LFPLApp e1 e2) = 
   case eval e1 of 
@@ -67,21 +67,21 @@ eval (LFPLPositionTerm _ t _) = eval t
 -- For the cons case, the function 'consCase' should take in 3 arguments
 -- (the diamond, head, and recursive result) and should produce a term
 -- with those values substituted in
-lfplIter :: LFPLTerm String -> (LFPLTerm String -> LFPLTerm String -> LFPLTerm String -> LFPLTerm String) -> LFPLTerm String -> LFPLTerm String
+lfplIter :: LFPLTerm -> (LFPLTerm -> LFPLTerm -> LFPLTerm -> LFPLTerm) -> LFPLTerm -> LFPLTerm
 lfplIter nilCase consCase = eval . \case 
   LFPLListNil {} -> nilCase 
   LFPLListCons diamond listHead listTail -> 
     consCase diamond listHead (lfplIter nilCase consCase listTail)
 
-evalInt :: LFPLTerm String -> Integer
+evalInt :: LFPLTerm -> Integer
 evalInt t = case eval t of 
   LFPLIntLiteral i -> i
   _ -> error "eval: Expected integer"
 
 -- subst x v e = [v/x]e
-subst :: String -> LFPLTerm String -> LFPLTerm String -> LFPLTerm String 
+subst :: String -> LFPLTerm -> LFPLTerm -> LFPLTerm 
 subst x v = cata go 
-  where go :: LFPLTermF String (LFPLTerm String) -> LFPLTerm String
+  where go :: LFPLTermF LFPLTerm -> LFPLTerm
         go (LFPLIdentifierF y) | x == y = v
                                | otherwise = LFPLIdentifier y
         go other = embed other

@@ -1,0 +1,11 @@
+let 
+    append: int list -> int list -> int list = 
+        fn xs: int list => fn ys: int list => 
+            iter xs {
+                [] => ys 
+              | cons(d, x, _) with y => cons(d, x, y)
+            }
+in
+    -- Single line comments
+    append
+end

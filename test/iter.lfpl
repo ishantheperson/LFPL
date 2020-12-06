@@ -1,4 +1,4 @@
-iter (cons(<>, 1, cons(<>, 5, nil))) { 
+iter (cons(<>, 1, cons(<>, 5, []: int))) { 
     nil => 0 
   | cons(x, y, _) with z => y + z 
 }

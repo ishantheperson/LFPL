@@ -5,11 +5,13 @@
 module LFPL.Rename where
 
 import LFPL.AST 
+import LFPL.Error
 import LFPL.Util
 
+import Data.Char
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.List.NonEmpty
+import Data.List.NonEmpty (NonEmpty)
 -- Allows running functions on first and second components of tuples
 import Data.Bifunctor
 
@@ -22,22 +24,30 @@ data RenameErrorData =
     UnknownVariable String
     deriving Show
 
-data RenameError = RenameError (Maybe SourceRange) RenameErrorData
+data RenameError = RenameError SourceRange RenameErrorData
+
+instance CompilerError RenameError where 
+  errorMsg (RenameError position err) = 
+    let
+      errTxt = case err of 
+        UnknownVariable v -> "Variable '" ++ v ++ "' not declared" 
+    in 
+      showSourceRange position ++ ": " ++ errTxt
 
 -- We store a mapping from
 -- a source variable name to its renamed/mangled version.
 -- We also store our current position in the environment
-type RenameContext = (Maybe SourceRange, Map String String)
+type RenameContext = (SourceRange, Map String String)
 -- While renaming, we need to keep track of 
 -- our rename mapping, any errors produced,
 -- as well as the next available # for the 
 type Renamer m = 
     (MonadReader RenameContext m, MonadWriter (Maybe (NonEmpty RenameError)) m, MonadState Int m)
 
--- rename :: forall m. Renamer m => LFPLTerm String -> m (LFPLTerm String)
-rename :: LFPLTerm String -> Either (NonEmpty RenameError) (LFPLTerm String)
+-- rename :: forall m. Renamer m => LFPLTerm -> m LFPLTerm
+rename :: LFPLTerm -> Either (NonEmpty RenameError) LFPLTerm
 rename = runRenamer . fold go 
-  where go :: Renamer m => LFPLTermF String (m (LFPLTerm String)) -> m (LFPLTerm String)
+  where go :: Renamer m => LFPLTermF (m LFPLTerm) -> m LFPLTerm
         go (LFPLIdentifierF v) = do
           maybeMappedName <- asks (Map.lookup v . snd)
           case maybeMappedName of
@@ -89,6 +99,9 @@ mangle str = do
   nextNumber <- get 
   modify' succ 
   return $ str ++ "_" ++ show nextNumber
+
+unmangle :: String -> String 
+unmangle = reverse . tail . dropWhile isNumber . reverse
 
 runRenamer :: ReaderT RenameContext (StateT Int (Writer (Maybe (NonEmpty RenameError)))) a -> Either (NonEmpty RenameError) a
 runRenamer f = 

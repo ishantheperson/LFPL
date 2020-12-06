@@ -26,6 +26,9 @@ dependencies:
 - megaparsec
 - parser-combinators
 - recursion-schemes
+
+#- haskeline
+
 - pretty-show
 - hscolour
 

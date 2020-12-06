@@ -5,8 +5,11 @@
 module LFPL.Typecheck where
 
 import LFPL.AST
+import LFPL.Rename
+import LFPL.Error
 import LFPL.Util
 
+import Text.Printf
 import Data.Map (Map)
 import qualified Data.Map.Strict as Map
 import Data.List.NonEmpty
@@ -47,35 +50,58 @@ data TypeErrorData =
     TypeMismatch LFPLType LFPLType String
   | NotFunction LFPLType
   | NotList LFPLType
-  -- | LinearityViolation varName lastPos
-  | LinearityViolation String (Maybe SourceRange)
+  -- | LinearityViolation varName record
+  | LinearityViolation String VariableRecord
   deriving Show
 
-data TypeError = TypeError (Maybe SourceRange) TypeErrorData deriving Show
+data TypeError = TypeError SourceRange TypeErrorData deriving Show
+
+instance CompilerError TypeError where 
+  errorMsg (TypeError position err) = 
+    let
+      errTxt = case err of 
+        TypeMismatch expected actual detail -> 
+          printf "%s\nexpected: %s\nactual: %s" detail (show expected) (show actual)
+
+        NotFunction t -> 
+          printf "Type '%s' is not a function" (show t)
+
+        NotList t -> 
+          printf "Type '%s' is not a list" (show t)
+        
+        LinearityViolation v VariableRecord{..} -> 
+          printf "Variable '%s' of type '%s' is not heap-free and cannot be used multiple times\nLast usage: %s\nDeclared at: %s" 
+                  (unmangle v) 
+                  (showLfplType variableType) 
+                  (showSourceRange variableUsagePosition)
+                  (showSourceRange variableDeclarationPosition)
+    in 
+      showSourceRange position ++ ": " ++ errTxt
+
 
 data VariableRecord = VariableRecord
   {
     variableType :: LFPLType,
     variableUsed :: Bool,
-    variableDeclarationPosition :: Maybe SourceRange,
-    variableUsagePosition :: Maybe SourceRange
+    variableDeclarationPosition :: SourceRange,
+    variableUsagePosition :: SourceRange
   } deriving Show
 
 type VariableContext = Map String VariableRecord
-type TypecheckContext = (Maybe SourceRange, VariableContext)
+type TypecheckContext = (SourceRange, VariableContext)
 type Typechecker m = 
   (MonadReader TypecheckContext m, MonadWriter (Maybe (NonEmpty TypeError)) m)
 
-typecheck :: LFPLTerm String -> Either (NonEmpty TypeError) LFPLType
+typecheck :: LFPLTerm -> Either (NonEmpty TypeError) LFPLType
 typecheck = runTypechecker . fold go
-  where go :: Typechecker m => LFPLTermF String (m (LFPLType, VariableContext)) -> m (LFPLType, VariableContext)
+  where go :: Typechecker m => LFPLTermF (m (LFPLType, VariableContext)) -> m (LFPLType, VariableContext)
         go (LFPLIdentifierF v) = do 
           record@VariableRecord{..} <- lookupVar v
           position <- getPosition
 
           -- Check if its okay to use this variable
           when (variableUsed && not (heapFree variableType)) $
-            tellError (TypeError position (LinearityViolation v variableUsagePosition))
+            tellError (TypeError position (LinearityViolation v record))
 
           -- Update the variable record with the usage information
           return (variableType, 
@@ -260,7 +286,7 @@ lookupVar v = do
     Nothing -> error "typecheck: All variables should be bound"
     Just record -> return record
 
-getPosition :: Typechecker m => m (Maybe SourceRange)
+getPosition :: Typechecker m => m (SourceRange)
 getPosition = asks fst
 
 getContext :: Typechecker m => m VariableContext

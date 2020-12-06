@@ -1,6 +1,4 @@
 {-# OPTIONS_GHC -Wno-orphans -Wno-unused-do-bind -Wno-name-shadowing #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 module LFPL.Parser where 
@@ -10,6 +8,7 @@ import Data.Void (Void)
 import Control.Monad (void)
 
 import LFPL.AST
+import LFPL.Error
 
 import Text.Megaparsec 
 import Text.Megaparsec.Char
@@ -23,7 +22,7 @@ type Parser = Parsec Void String
 --   errorStage = const "parsing"
 --   errorMsg = errorBundlePretty
 
-lfplTerm :: Parser (LFPLTerm String)
+lfplTerm :: Parser LFPLTerm
 lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "expression"
   where lfplLambda = do 
           (name, t) <- reserved "fn" *> (nameAndType <|> parens nameAndType)
@@ -231,8 +230,14 @@ blockComment = do
   void $ string "(*"
   void $ manyTill anySingle (string "*)")
 
-run :: String -> LFPLTerm String
+run :: String -> LFPLTerm
 run str = 
   case runParser (sc *> lfplTerm <* eof) "<testing>" str of 
     Left err -> error (errorBundlePretty err) 
     Right r -> r
+
+instance CompilerError (ParseErrorBundle String Void) where 
+  errorMsg = errorBundlePretty
+
+parseTerm :: FilePath -> String -> Either (ParseErrorBundle String Void) LFPLTerm
+parseTerm = runParser (sc *> lfplTerm <* eof)

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0071972c9ed394e45139b65014517903e57a6845ebdb483c663fe01aa9adcac4
+-- hash: 8e339e473a20d0e2685b1109700775e59a72ec0fa30db105d0cd3eb365587c21
 
 name:           lfpl
 version:        0.1.0.0
@@ -28,7 +28,13 @@ source-repository head
 library
   exposed-modules:
       LFPL.AST
+      LFPL.Compile
+      LFPL.Error
+      LFPL.Eval
       LFPL.Parser
+      LFPL.Rename
+      LFPL.Typecheck
+      LFPL.Util
       Lib
   other-modules:
       Paths_lfpl
@@ -39,6 +45,7 @@ library
     , containers
     , hscolour
     , megaparsec
+    , mtl
     , parser-combinators
     , pretty-show
     , recursion-schemes
@@ -56,6 +63,7 @@ executable lfpl
     , hscolour
     , lfpl
     , megaparsec
+    , mtl
     , parser-combinators
     , pretty-show
     , recursion-schemes
@@ -74,6 +82,7 @@ test-suite lfpl-test
     , hscolour
     , lfpl
     , megaparsec
+    , mtl
     , parser-combinators
     , pretty-show
     , recursion-schemes
