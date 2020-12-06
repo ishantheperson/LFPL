@@ -28,6 +28,11 @@ eval (LFPLListIter list nilCase diamond headItem recursiveResult consCase) =
     (\x y z -> subst diamond x $ subst headItem y $ subst recursiveResult z $ consCase)
     (eval list)
 
+eval (LFPLBindPair e1Name e2Name pair body) = 
+  case eval pair of 
+    LFPLPair e1 e2 -> eval (subst e1Name e1 $ subst e2Name e2 body)
+    _ -> error "eval: Expected pair"
+
 eval (LFPLIntCmpOp op e1 e2) = 
   let func = case op of 
                LessThan -> (<)
@@ -51,6 +56,9 @@ eval (LFPLIntArithOp op e1 e2) =
 -- Maybe values
 eval (LFPLListCons diamond listHead listTail) =
   LFPLListCons (eval diamond) (eval listHead) (eval listTail)
+
+eval (LFPLPair e1 e2) = 
+  LFPLPair (eval e1) (eval e2)
 
 -- Definitely values
 eval (t @ LFPLListNil {}) = t

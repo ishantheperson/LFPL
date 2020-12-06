@@ -50,6 +50,7 @@ data TypeErrorData =
     TypeMismatch LFPLType LFPLType String
   | NotFunction LFPLType
   | NotList LFPLType
+  | NotPair LFPLType
   -- | LinearityViolation varName record
   | LinearityViolation String VariableRecord
   deriving Show
@@ -68,6 +69,9 @@ instance CompilerError TypeError where
 
         NotList t -> 
           printf "Type '%s' is not a list" (showLfplType t)
+
+        NotPair t -> 
+          printf "Type '%s' is not a pair" (showLfplType t)
         
         LinearityViolation v VariableRecord{..} -> 
           printf "Variable '%s' of type '%s' is not heap-free and cannot be used multiple times\nLast usage: %s\nDeclared at: %s" 
@@ -271,6 +275,38 @@ typecheck = runTypechecker . fold go
 
           return (trueType, Map.unions [falseContext, trueContext, context])
 
+        go (LFPLPairF e1 e2) = do 
+          (e1Type, e1Context) <- e1 
+          context <- Map.union e1Context <$> getContext
+
+          (e2Type, e2Context) <- local (second (const context)) e2
+
+          return (LFPLPairType e1Type e2Type, Map.union e2Context context)
+
+        go (LFPLBindPairF e1Name e2Name pair body) = do 
+          position <- getPosition
+          (pairType, pairContext) <- pair
+          context <- Map.union pairContext <$> getContext
+
+          (t1, t2) <- case pairType of 
+                        LFPLPairType t1 t2 -> return (t1, t2)
+                        LFPLAnyType -> return (LFPLAnyType, LFPLAnyType)
+                        _ -> do 
+                          tellError (TypeError position (NotPair pairType))
+                          return (LFPLAnyType, LFPLAnyType)
+
+          let mkRecord t = VariableRecord { variableType = t,
+                                            variableUsed = False,
+                                            variableDeclarationPosition = position,
+                                            variableUsagePosition = Nothing }
+              e1Record = mkRecord t1
+              e2Record = mkRecord t2
+              bodyRecords = Map.fromList [(e1Name, e1Record), (e2Name, e2Record)] <> context
+
+          (bodyType, bodyContext) <- local (second (const bodyRecords)) body
+          
+          return (bodyType, Map.union bodyContext context)
+        
         go (LFPLIntLiteralF _) = return (LFPLIntType, Map.empty)
         go (LFPLBoolLiteralF _) = return (LFPLBoolType, Map.empty)
         go LFPLUnitLiteralF = return (LFPLUnitType, Map.empty)
@@ -285,7 +321,7 @@ lookupVar v = do
     Nothing -> error $ "typecheck: All variables should be bound " ++ v
     Just record -> return record
 
-getPosition :: Typechecker m => m (SourceRange)
+getPosition :: Typechecker m => m SourceRange
 getPosition = asks fst
 
 getContext :: Typechecker m => m VariableContext

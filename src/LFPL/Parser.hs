@@ -59,6 +59,21 @@ lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "express
             [x, y] -> return $ LFPLPair x y 
             _ -> fail "tuples must have exactly two elements"
 
+        lfplBindPair = do 
+          reserved "letp"
+          symbol "("
+          e1Name <- identifier 
+          symbol ","
+          e2Name <- identifier 
+          symbol ")"
+          symbol "="
+          pair <- lfplTerm 
+          reserved "in"
+          body <- lfplTerm 
+          reserved "end"
+
+          return $ LFPLBindPair e1Name e2Name pair body
+
         lfplNilSymbol = reserved "nil" <|> void (symbol "[]")
         lfplNil = LFPLListNil <$ lfplNilSymbol <*> (symbol ":" *> lfplType)
         lfplCons = do 
@@ -127,7 +142,7 @@ lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "express
         term = positioned $ 
           choice [lfplLambda, lfplIf, lfplLet,
                   lfplNil, lfplCons, lfplIter, 
-                  lfplList, lfplTuple,
+                  lfplList, lfplTuple, lfplBindPair,
                   lfplDiamond,lfplUnitLiteral, lfplIntLiteral, lfplBoolLiteral,
                   lfplIdent]
         postfix e = positioned (functionApp e) <|> return e 
@@ -177,6 +192,7 @@ lfplType = makeExprParser (term >>= postfix) operators <?> "type"
                      [InfixR (LFPLFunctionType <$ (symbol "->" <|> symbol "-o"))]
                     ]
 
+diamond :: Parser ()
 diamond = void (symbol "♢" <|> symbol "<>")
 
 -- Lexing 

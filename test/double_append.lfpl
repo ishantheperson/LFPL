@@ -1,0 +1,20 @@
+let 
+    append2 : (int * <>) list * int list -> int list = 
+        fn (xsys : ((int * <>) list) * int list) => 
+        letp 
+            (xs, ys) = xsys 
+        in 
+            iter xs {
+                nil => ys 
+              | cons(d0, x, _) with y => 
+                    letp 
+                        (x', d1) = x 
+                    in
+                        cons(d0, x', cons(d1, x', y)) 
+                    end 
+            }
+        end
+in 
+    append2
+-- Example input: ([(1, <>), (4, <>), (10, <>)]: int * <>, [-1, -2, -3,-4]: int
+end 

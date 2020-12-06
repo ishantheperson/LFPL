@@ -87,6 +87,7 @@ showLfplValue LFPLUnitLiteral = "()"
 showLfplValue LFPLDiamondLiteral = "<>"
 showLfplValue LFPLListNil {} = "[]"
 showLfplValue LFPLLambda {} = "<lambda>"
+showLfplValue (LFPLPair e1 e2) = printf "(%s, %s)" (showLfplValue e1) (showLfplValue e2)
 showLfplValue (t @ LFPLListCons {}) = 
   "[" ++ intercalate ", " (showLfplValue <$> lfplListToList t) ++ "]"
   where lfplListToList (LFPLListNil {}) = []
