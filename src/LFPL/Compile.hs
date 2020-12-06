@@ -24,9 +24,17 @@ unpackError (PackedCompilerError e) = errorMsg e
 -- We return the type of the expression as well as the output value
 type LFPLOutput = (LFPLType, LFPLTerm)
 
-compile :: FilePath -> String -> Either PackedCompilerError LFPLOutput
-compile fname str = do 
-  rawAst <- liftCompiler $ parseTerm fname str 
+compile :: FilePath -> String -> Maybe String -> Either PackedCompilerError LFPLOutput
+compile fname str maybeArg = do 
+  rawAst <- liftCompiler $ parseTerm (ParserConfig False) fname str
+  rawArg <- case maybeArg of 
+              Nothing -> return Nothing
+              Just argStr -> Just <$> liftCompiler (parseTerm (ParserConfig True) "<input>" argStr)
+  
+  rawAst <- return $ case rawArg of 
+              Nothing -> rawAst
+              Just arg -> LFPLApp rawAst arg 
+
   ast <- liftCompiler $ rename rawAst
   programType <- liftCompiler $ typecheck ast 
 

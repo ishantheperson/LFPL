@@ -61,13 +61,13 @@ instance CompilerError TypeError where
     let
       errTxt = case err of 
         TypeMismatch expected actual detail -> 
-          printf "%s\nexpected: %s\nactual: %s" detail (show expected) (show actual)
+          printf "%s\nexpected: %s\nactual: %s" detail (showLfplType expected) (showLfplType actual)
 
         NotFunction t -> 
-          printf "Type '%s' is not a function" (show t)
+          printf "Type '%s' is not a function" (showLfplType t)
 
         NotList t -> 
-          printf "Type '%s' is not a list" (show t)
+          printf "Type '%s' is not a list" (showLfplType t)
         
         LinearityViolation v VariableRecord{..} -> 
           printf "Variable '%s' of type '%s' is not heap-free and cannot be used multiple times\nLast usage: %s\nDeclared at: %s" 
@@ -100,12 +100,15 @@ typecheck = runTypechecker . fold go
           position <- getPosition
 
           -- Check if its okay to use this variable
-          when (variableUsed && not (heapFree variableType)) $
-            tellError (TypeError position (LinearityViolation v record))
+          if variableUsed && not (heapFree variableType)
+            then do 
+              tellError (TypeError position (LinearityViolation v record))
+              return (variableType, Map.singleton v record)
+            else 
+              -- Update the variable record with the usage information
+              return (variableType, 
+                      Map.singleton v (record { variableUsed = True, variableUsagePosition = position }))
 
-          -- Update the variable record with the usage information
-          return (variableType, 
-                  Map.singleton v (record { variableUsed = True, variableUsagePosition = position }))
 
         go (LFPLLambdaF paramName paramType body) = do 
           position <- getPosition 
@@ -220,10 +223,9 @@ typecheck = runTypechecker . fold go
               tellError (TypeError position (NotList listType))
               return LFPLAnyType
 
-          -- variables can be used in nilCase and consCase
-          -- but if its used in either one, it is "used"
-
-          -- Typecheck nilCase
+          -- Typecheck nilCase.
+          -- Note context is only split between list and nilCase
+          -- not consCase
           (nilCaseType, nilCaseContext) <- local (second (const context)) nilCase
 
           -- Create records for consCase
@@ -235,12 +237,9 @@ typecheck = runTypechecker . fold go
               headItemRecord = mkRecord listElemType
               recursiveResultRecord = mkRecord nilCaseType
 
-              consContext = Map.union (Map.fromList 
-                                        [(diamond, diamondRecord),
-                                         (headItem, headItemRecord),
-                                         (recursiveResult, recursiveResultRecord)]
-                                      )
-                                      context
+              consContext = Map.fromList [(diamond, diamondRecord),
+                                          (headItem, headItemRecord),
+                                          (recursiveResult, recursiveResultRecord)]
 
           (consCaseType, consCaseContext) <- local (second (const consContext)) consCase
 
@@ -249,7 +248,7 @@ typecheck = runTypechecker . fold go
               TypeMismatch nilCaseType consCaseType "nil and cons cases in iter don't match"
             ))
 
-          return (nilCaseType, Map.unions [consCaseContext, nilCaseContext, context])
+          return (consCaseType, Map.unions [consCaseContext, nilCaseContext, context])
 
         go (LFPLIfF e1 e2 e3) = do 
           position <- getPosition 
@@ -283,7 +282,7 @@ lookupVar :: Typechecker m => String -> m VariableRecord
 lookupVar v = do 
   maybeLookup <- asks (Map.lookup v . snd)
   case maybeLookup of 
-    Nothing -> error "typecheck: All variables should be bound"
+    Nothing -> error $ "typecheck: All variables should be bound " ++ v
     Just record -> return record
 
 getPosition :: Typechecker m => m (SourceRange)

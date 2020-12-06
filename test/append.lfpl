@@ -6,6 +6,5 @@ let
               | cons(d, x, _) with y => cons(d, x, y)
             }
 in
-    -- Single line comments
     append
 end

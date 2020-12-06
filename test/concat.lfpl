@@ -1,0 +1,19 @@
+let 
+    concat: int list list -> int list = 
+        fn xss: int list list => 
+        iter xss {
+            [] => []: int
+          | cons(d, xs, _) with y => 
+                iter xs {
+                    [] => y 
+                  | cons(d', x, _) with y' =>
+                        cons(d', x, y')
+                }
+
+                -- Note 'd' is lost here. We don't need it
+        }
+in
+    concat
+    -- Example input: 
+    -- ([[1,2,3]: int, [4,5,6]: int, [7,8,9]: int]: int list)
+end 

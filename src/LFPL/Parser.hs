@@ -5,10 +5,10 @@ module LFPL.Parser where
 
 import Data.Void (Void) 
 
-import Control.Monad (void)
-
 import LFPL.AST
-import LFPL.Error
+import LFPL.Error ( CompilerError(..) )
+
+import Control.Monad.Reader
 
 import Text.Megaparsec 
 import Text.Megaparsec.Char
@@ -16,11 +16,13 @@ import qualified Text.Megaparsec.Char.Lexer as Lex
 import Control.Monad.Combinators.Expr
 import Data.Functor (($>))
 
-type Parser = Parsec Void String 
+type Parser = ParsecT Void String (Reader ParserConfig)
 
 -- instance CompilerError (ParseErrorBundle String Void) where 
 --   errorStage = const "parsing"
 --   errorMsg = errorBundlePretty
+
+data ParserConfig = ParserConfig { allowLiteralDiamonds :: Bool }
 
 lfplTerm :: Parser LFPLTerm
 lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "expression"
@@ -71,7 +73,29 @@ lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "express
 
           return $ LFPLListCons e1 e2 e3
 
-        lfplDiamond = LFPLDiamondLiteral <$ diamond
+        lfplDiamond = do 
+          diamond
+          diamondsAllowed <- asks allowLiteralDiamonds
+          unless diamondsAllowed $ 
+            fail "diamond literals not allowed here"
+          
+          return LFPLDiamondLiteral
+        
+        lfplList = do 
+          symbol "["
+          items <- sepBy1 lfplTerm (symbol ",")
+          symbol "]"
+
+          symbol ":"
+
+          t <- lfplType
+
+          diamondsAllowed <- asks allowLiteralDiamonds
+          unless diamondsAllowed $ 
+            fail "list literal not allowed here"
+          
+          -- Convert into a cons-list
+          return $ foldr (LFPLListCons LFPLDiamondLiteral) (LFPLListNil t) items
 
         lfplIter = do 
           reserved "iter"
@@ -102,9 +126,9 @@ lfplTerm = positioned (makeExprParser (term >>= postfix) operators) <?> "express
 
         term = positioned $ 
           choice [lfplLambda, lfplIf, lfplLet,
-                  lfplNil, lfplCons, lfplIter, lfplDiamond,
-                  lfplTuple,
-                  lfplUnitLiteral, lfplIntLiteral, lfplBoolLiteral,
+                  lfplNil, lfplCons, lfplIter, 
+                  lfplList, lfplTuple,
+                  lfplDiamond,lfplUnitLiteral, lfplIntLiteral, lfplBoolLiteral,
                   lfplIdent]
         postfix e = positioned (functionApp e) <|> return e 
 
@@ -139,19 +163,13 @@ lfplType :: Parser LFPLType
 lfplType = makeExprParser (term >>= postfix) operators <?> "type"
   where term =  
               LFPLIntType <$ reserved "int"
-          -- <|> F0PrimitiveType F0StringType <$ reserved "string" 
           <|> LFPLBoolType <$ reserved "bool"
           <|> LFPLUnitType <$ reserved "unit"
           <|> LFPLDiamondType <$ diamond
           <|> parens lfplType 
         
-        -- A little hacky, but whats happening is that
-        -- we need to know if we are parsing a tuple
-        -- type or not. In postfixA we aren't necessarily,
-        -- but in postfixB we are.
         postfix e = typeApp e postfix <|> return e
 
-        -- typeApp e next = identifier >>= \name -> next (F0TypeCons e name)
         -- Right now the only type app we can do is "list"
         typeApp e next = reserved "list" *> next (LFPLListType e)
 
@@ -194,25 +212,20 @@ reserved :: String -> Parser ()
 reserved word = (lexeme . try) (string word *> notFollowedBy alphaNumChar)
 
 reservedWords :: [String]
-reservedWords = ["val",
-                 "fun",
-                 "if",
+reservedWords = ["if",
                  "then",
                  "else",
                  "fn",
                  "int",
-                 "string",
                  "bool",
                  "unit",
                  "let",
                  "in",
                  "end",
+                 "iter",
                  "with",
                  "true",
                  "false",
-                --  "case",
-                --  "of",
-                --  "datatype",
                  "♢", "<>",
                  "λ"]
 
@@ -232,12 +245,13 @@ blockComment = do
 
 run :: String -> LFPLTerm
 run str = 
-  case runParser (sc *> lfplTerm <* eof) "<testing>" str of 
+  case runReader (runParserT (sc *> lfplTerm <* eof) "<testing>" str) (ParserConfig True) of 
     Left err -> error (errorBundlePretty err) 
     Right r -> r
 
 instance CompilerError (ParseErrorBundle String Void) where 
   errorMsg = errorBundlePretty
 
-parseTerm :: FilePath -> String -> Either (ParseErrorBundle String Void) LFPLTerm
-parseTerm = runParser (sc *> lfplTerm <* eof)
+parseTerm :: ParserConfig -> FilePath -> String -> Either (ParseErrorBundle String Void) LFPLTerm
+parseTerm config fname txt = 
+  runReader (runParserT (sc *> lfplTerm <* eof) fname txt) config

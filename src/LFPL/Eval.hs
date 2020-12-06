@@ -18,7 +18,7 @@ eval (LFPLApp e1 e2) =
 
 eval (LFPLIf e1 e2 e3) = 
   case eval e1 of 
-    LFPLBoolLiteral True -> eval e2 
+    LFPLBoolLiteral True -> eval e2
     LFPLBoolLiteral False -> eval e3 
     _ -> error "eval: Expected bool for if"
 
@@ -72,6 +72,7 @@ lfplIter nilCase consCase = eval . \case
   LFPLListNil {} -> nilCase 
   LFPLListCons diamond listHead listTail -> 
     consCase diamond listHead (lfplIter nilCase consCase listTail)
+  _ -> error "lfplIter: ill-typed expression"
 
 evalInt :: LFPLTerm -> Integer
 evalInt t = case eval t of 
@@ -80,8 +81,11 @@ evalInt t = case eval t of
 
 -- subst x v e = [v/x]e
 subst :: String -> LFPLTerm -> LFPLTerm -> LFPLTerm 
-subst x v = cata go 
-  where go :: LFPLTermF LFPLTerm -> LFPLTerm
+subst x v = para go 
+  where go :: LFPLTermF (LFPLTerm, LFPLTerm) -> LFPLTerm
         go (LFPLIdentifierF y) | x == y = v
                                | otherwise = LFPLIdentifier y
-        go other = embed other
+
+        go (LFPLLambdaF y t (oldBody, replacedBody)) | x == y = LFPLLambda y t oldBody 
+                                                     | otherwise = LFPLLambda y t replacedBody
+        go other = embed (snd <$> other)

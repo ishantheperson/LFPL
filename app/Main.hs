@@ -1,13 +1,10 @@
 module Main where
 
 import LFPL.AST
-import LFPL.Parser
-import LFPL.Rename
-import LFPL.Typecheck
-import LFPL.Eval
 import LFPL.Compile
 
 import System.Environment
+import System.Exit
 
 import Text.Show.Pretty 
 import Language.Haskell.HsColour
@@ -16,12 +13,18 @@ import Language.Haskell.HsColour.Colourise
 colorPrint :: Show a => a -> IO () 
 colorPrint = putStrLn . hscolour TTY defaultColourPrefs False False "" False . ppShow 
 
-runFile :: FilePath -> IO ()
-runFile fname = do 
+runStr :: String -> IO ()
+runStr txt = do 
+  case compile "<stdin>" txt Nothing of 
+    Left err -> do { putStrLn (unpackError err); exitFailure }
+    Right (t, result) -> do { putStrLn (showLfplValue result ++ ": " ++ showLfplType t); exitSuccess }
+
+runFile :: FilePath -> Maybe String -> IO ()
+runFile fname arg = do 
   txt <- readFile fname 
-  putStrLn $ case compile fname txt of 
-    Left err -> unpackError err
-    Right (t, result) -> showLfplValue result ++ ": " ++ showLfplType t
+  case compile fname txt arg of 
+    Left err -> do { putStrLn (unpackError err); exitFailure }
+    Right (t, result) -> do { putStrLn (showLfplValue result ++ ": " ++ showLfplType t); exitSuccess }
 
 usage :: IO ()
 usage = do 
@@ -43,5 +46,6 @@ main = do
   args <- getArgs
   case args of 
     [] -> usage -- launch REPL?
-    [fname] -> runFile fname-- eval 
+    [fname] -> runFile fname Nothing-- eval
+    [fname, arg] -> runFile fname (Just arg)
     _ -> usage

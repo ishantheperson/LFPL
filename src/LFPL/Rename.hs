@@ -1,6 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedLists #-}
 module LFPL.Rename where
 
@@ -30,7 +29,7 @@ instance CompilerError RenameError where
   errorMsg (RenameError position err) = 
     let
       errTxt = case err of 
-        UnknownVariable v -> "Variable '" ++ v ++ "' not declared" 
+        UnknownVariable v -> "Variable '" ++ v ++ "' not declared or out of scope" 
     in 
       showSourceRange position ++ ": " ++ errTxt
 
@@ -78,7 +77,7 @@ rename = runRenamer . fold go
           renamedHeadItem <- mangle headItem 
           renamedRecursiveResult <- mangle recursiveResult 
 
-          renamedConsCase <- local (second $ Map.union [
+          renamedConsCase <- local (second $ const [
                                     (diamond, renamedDiamond), 
                                     (headItem, renamedHeadItem), 
                                     (recursiveResult, renamedRecursiveResult)
@@ -94,7 +93,7 @@ rename = runRenamer . fold go
 
         go nonBindingTerm = embed <$> sequence nonBindingTerm
 
-mangle :: forall m. MonadState Int m => String -> m String
+mangle :: MonadState Int m => String -> m String
 mangle str = do
   nextNumber <- get 
   modify' succ 
