@@ -29,15 +29,15 @@ runFile fname arg = do
 usage :: IO ()
 usage = do 
   mapM_ putStrLn 
-    [ "usage: lfpl [file] [input]"
+    [ "usage: lfpl <file> [input]"
     , ""
-    , "If file is blank, then the REPL is launched"
-    , "Otherwise, executes the file, printing out the type and result." 
+    , "Executes the file, printing out the type and result." 
     , "Optionally, input can be provided, given that file contains"
     , "a valid LFPL function of the right type"
     , ""
     , "When specifying input, lists can be created using"
-    , "the usual syntactic sugar e.g. [1, 2, 3, 4]."
+    , "the usual syntactic sugar e.g. ([1, 2, 3, 4]: int)."
+    , "Note that you must also add the type of the elements (not the list)"
     , "This is the only way of getting diamonds into the program"
     ]
 
@@ -45,7 +45,7 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of 
-    [] -> usage -- launch REPL?
+    [] -> usage
     [fname] -> runFile fname Nothing-- eval
     [fname, arg] -> runFile fname (Just arg)
     _ -> usage
