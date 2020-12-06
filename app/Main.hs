@@ -6,13 +6,6 @@ import LFPL.Compile
 import System.Environment
 import System.Exit
 
-import Text.Show.Pretty 
-import Language.Haskell.HsColour
-import Language.Haskell.HsColour.Colourise
-
-colorPrint :: Show a => a -> IO () 
-colorPrint = putStrLn . hscolour TTY defaultColourPrefs False False "" False . ppShow 
-
 runStr :: String -> IO ()
 runStr txt = do 
   case compile "<stdin>" txt Nothing of 
@@ -46,6 +39,6 @@ main = do
   args <- getArgs
   case args of 
     [] -> usage
-    [fname] -> runFile fname Nothing-- eval
+    [fname] -> runFile fname Nothing
     [fname, arg] -> runFile fname (Just arg)
     _ -> usage
